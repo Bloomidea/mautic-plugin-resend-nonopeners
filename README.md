@@ -108,7 +108,7 @@ Response:
 ## Constraints
 
 - Only segment (broadcast) emails can be resent — not template/campaign emails
-- The original email must have finished sending (`sendingStatus === 'sent'`)
+- The original email must have been sent to at least one contact (`sentCount > 0`). This includes emails with "continue sending" enabled, since those never reach `sendingStatus === 'sent'` despite having real non-openers to target.
 - Each email can only be resent once
 - A resend email cannot be resent again
 - Triggering from a translation child automatically resolves to the parent
