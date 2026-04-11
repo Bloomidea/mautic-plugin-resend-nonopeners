@@ -1,0 +1,26 @@
+{
+    "name": "bloomidea/mautic-plugin-resend-nonopeners",
+    "description": "Mautic plugin to resend segment emails to contacts who did not open them, with automatic segment cloning and translation handling.",
+    "type": "mautic-plugin",
+    "license": "GPL-3.0-or-later",
+    "keywords": [
+        "mautic",
+        "plugin",
+        "email",
+        "resend",
+        "non-openers"
+    ],
+    "authors": [
+        {
+            "name": "Bloomidea",
+            "homepage": "https://bloomidea.com"
+        }
+    ],
+    "extra": {
+        "install-directory-name": "MauticResendNonOpenersBundle"
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "mautic/core-lib": "^7.0"
+    }
+}
