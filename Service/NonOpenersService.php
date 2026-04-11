@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MauticPlugin\MauticResendNonOpenersBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Mautic\CoreBundle\Helper\CommandHelper;
 use Mautic\EmailBundle\Entity\Email;
 use Mautic\EmailBundle\Model\EmailModel;
 use Mautic\LeadBundle\Entity\LeadList;
@@ -18,7 +17,6 @@ class NonOpenersService
     public function __construct(
         private EmailModel $emailModel,
         private ListModel $listModel,
-        private CommandHelper $commandHelper,
         private EmailResendRepository $emailResendRepository,
         private EntityManagerInterface $entityManager,
     ) {
@@ -127,8 +125,12 @@ class NonOpenersService
 
         $this->listModel->saveEntity($newSegment);
 
-        // Rebuild the segment to populate contacts
-        $this->commandHelper->runCommand('mautic:segments:update', ['-i' => $newSegment->getId()]);
+        // The segment will be rebuilt by the mautic:segments:update cron on its
+        // next run, which typically runs every few minutes. We intentionally do
+        // NOT rebuild it synchronously here because for large segments the
+        // rebuild takes minutes, which would block the HTTP request until the
+        // web server times out with a 500. Relying on the cron is consistent
+        // with how Mautic normally handles segment email sending anyway.
 
         // Clone the parent email
         $clonedEmail = clone $email;

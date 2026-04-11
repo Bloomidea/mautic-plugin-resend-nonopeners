@@ -27,10 +27,12 @@ Every major email marketing platform (Mailchimp, Brevo, ActiveCampaign) has a on
 2. The plugin creates a new segment with two filters:
    - **Segment Membership — including any of — [original segment(s)]**
    - **Read a specific email — excluding any of — [original + all translations]**
-3. The segment is rebuilt to populate the non-opener contacts
-4. The plugin clones the email and all its translation children, assigns them to the new segment, and publishes them
+3. The plugin clones the email and all its translation children, assigns them to the new segment, and publishes them
+4. Mautic's `mautic:segments:update` cron rebuilds the new segment to populate the non-opener contacts on its next run
 5. Mautic's `mautic:broadcasts:send` cron picks up the cloned email and sends it to the non-openers
 6. A record of the resend is stored in the `email_resends` table so the email can't be resent again
+
+The whole thing is asynchronous: the HTTP request returns immediately after creating the segment and cloned email. Segment rebuild and delivery happen in the background via Mautic's standard crons, so you can trigger it on segments of any size without timeouts.
 
 ## Requirements
 
