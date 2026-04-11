@@ -35,7 +35,11 @@ class NonOpenersService
             return false;
         }
 
-        if ('sent' !== $email->getSendingStatus()) {
+        // Must have sent to at least one contact. We intentionally do not
+        // require getSendingStatus() === 'sent' because emails with
+        // continueSending enabled never reach that status even though they
+        // have real non-openers to target.
+        if ($email->getSentCount() < 1) {
             return false;
         }
 

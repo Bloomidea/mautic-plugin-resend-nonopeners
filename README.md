@@ -1,8 +1,11 @@
 # Mautic Plugin: Resend to Non-Openers
 
+[![Packagist Version](https://img.shields.io/packagist/v/bloomidea/mautic-plugin-resend-nonopeners.svg)](https://packagist.org/packages/bloomidea/mautic-plugin-resend-nonopeners)
+[![License](https://img.shields.io/github/license/Bloomidea/mautic-plugin-resend-nonopeners.svg)](LICENSE)
+
 A Mautic plugin that adds a one-click "Resend to Non-Openers" action for segment (broadcast) emails.
 
-After a segment email has finished sending, this plugin lets you resend it to contacts who did not open it. It automates the manual workflow of cloning the segment with a "not read email" filter, cloning the email (including all its translations), and publishing it for the broadcast cron to send.
+After a segment email has been sent, this plugin lets you resend it to contacts who did not open it. It automates the manual workflow of cloning the segment with a "not read email" filter, cloning the email (including all its translations), and publishing it for the broadcast cron to send.
 
 ## Why
 
@@ -36,7 +39,9 @@ Every major email marketing platform (Mailchimp, Brevo, ActiveCampaign) has a on
 
 ## Installation
 
-### Via Composer (recommended, once published)
+### Via Composer (recommended)
+
+The plugin is published on [Packagist](https://packagist.org/packages/bloomidea/mautic-plugin-resend-nonopeners). If your Mautic installation has a `composer.json` (source-based install), run:
 
 ```bash
 composer require bloomidea/mautic-plugin-resend-nonopeners
@@ -44,29 +49,35 @@ bin/console mautic:plugins:reload
 bin/console cache:clear
 ```
 
-### Manual installation
+Composer reads `install-directory-name` from the plugin's `composer.json` and installs it to `plugins/MauticResendNonOpenersBundle/` automatically.
 
-1. Clone this repository into your Mautic `plugins/` directory:
-   ```bash
-   cd /path/to/mautic/plugins
-   git clone https://github.com/Bloomidea/mautic-plugin-resend-nonopeners.git MauticResendNonOpenersBundle
-   ```
-2. Reload plugins:
-   ```bash
-   bin/console mautic:plugins:reload
-   bin/console cache:clear
-   ```
-3. The plugin creates an `email_resends` table automatically from its entity metadata during plugin reload.
+### Manual installation (for runtime Docker images)
+
+The official `mautic/mautic:7-apache` Docker image is a runtime build without `composer.json`, so `composer require` will not work inside it. In that case, clone the plugin directly into the plugins directory and pin a tag for reproducible builds:
+
+```bash
+cd /path/to/mautic/plugins
+git clone --branch v1.0.1 --depth 1 https://github.com/Bloomidea/mautic-plugin-resend-nonopeners.git MauticResendNonOpenersBundle
+rm -rf MauticResendNonOpenersBundle/.git
+bin/console mautic:plugins:reload
+bin/console cache:clear
+```
+
+For Dockerfile usage, add the same commands as a `RUN` step. To upgrade, bump the tag and rebuild.
+
+The plugin creates an `email_resends` table automatically from its entity metadata during plugin reload.
 
 ## Usage
 
 ### UI
 
-1. Open a segment email that has finished sending
+1. Open a segment email that has been sent to at least one contact
 2. Click the **Options** dropdown (the chevron next to the Edit button)
 3. Click **Resend to Non-Openers**
 4. Confirm in the modal
 5. The broadcast cron will send the cloned email to non-openers on its next run
+
+> **Note on continuous-sending emails:** if the original email has "continue sending" enabled, "non-openers" will include very recent recipients. The plugin still allows the resend — the decision of when to trigger it is up to you.
 
 ### CLI
 

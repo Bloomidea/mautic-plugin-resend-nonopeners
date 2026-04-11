@@ -48,7 +48,7 @@ class ResendNonOpenersCommand extends Command
 
         if (!$this->nonOpenersService->canResend($email)) {
             $io->error(sprintf(
-                'Email "%s" (ID %d) cannot be resent. It must be a segment email that has finished sending, has not already been resent, and is not itself a resend.',
+                'Email "%s" (ID %d) cannot be resent. It must be a segment email that has been sent to at least one contact, has not already been resent, and is not itself a resend.',
                 $email->getName(),
                 $emailId
             ));
