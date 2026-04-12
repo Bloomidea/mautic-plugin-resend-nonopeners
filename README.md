@@ -18,7 +18,10 @@ Every major email marketing platform (Mailchimp, Brevo, ActiveCampaign) has a on
 - **API endpoint**: `POST /api/resend-nonopeners/{id}`
 - **Multilingual support** — clones parent email and all translation children, filters across all translation IDs
 - **Automatic segment creation** — new segment combines "member of original audience" + "did not read email" filters
+- **Auto-categorization** — creates a "Resend Non-Openers" category and assigns it to all cloned emails and segments for easy filtering in lists
+- **Auto-cleanup** — when the resend email finishes sending (or is manually unpublished), the linked segment is automatically unpublished too
 - **Safe by default** — each email can only be resent once; a resend cannot be resent again
+- **Fully async** — the HTTP request returns immediately; segment rebuild and delivery happen in the background via Mautic's standard crons, so it works for segments of any size without timeouts
 - **Uses the standard broadcast cron** — scales to any list size, respects rate limits
 
 ## Screenshots
@@ -44,11 +47,13 @@ For the full visual walkthrough (8 screenshots), see [mautic/mautic#16004](https
    - **Segment Membership — including any of — [original segment(s)]**
    - **Read a specific email — excluding any of — [original + all translations]**
 3. The plugin clones the email and all its translation children, assigns them to the new segment, and publishes them
-4. Mautic's `mautic:segments:update` cron rebuilds the new segment to populate the non-opener contacts on its next run
-5. Mautic's `mautic:broadcasts:send` cron picks up the cloned email and sends it to the non-openers
-6. A record of the resend is stored in the `email_resends` table so the email can't be resent again
-
-The whole thing is asynchronous: the HTTP request returns immediately after creating the segment and cloned email. Segment rebuild and delivery happen in the background via Mautic's standard crons, so you can trigger it on segments of any size without timeouts.
+4. Both the segment and the cloned emails are tagged with a "Resend Non-Openers" category (auto-created on first use)
+5. A record of the resend is stored in the `email_resends` table so the email can't be resent again
+6. The HTTP request returns immediately — everything from here is async via Mautic's standard crons
+7. `mautic:segments:update` rebuilds the new segment to populate the non-opener contacts
+8. `mautic:broadcasts:send` picks up the cloned email and sends it to the non-openers
+9. When all non-openers have been sent to, Mautic auto-unpublishes the resend email
+10. The plugin detects the unpublish and automatically unpublishes the linked segment too — no cleanup needed
 
 ## Requirements
 
