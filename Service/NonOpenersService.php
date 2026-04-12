@@ -146,6 +146,10 @@ class NonOpenersService
         $clonedEmail->setLists([$newSegment]);
         $clonedEmail->setIsPublished(true);
         $clonedEmail->setCategory($emailCategory);
+        // publishUp must be set — the broadcast query excludes emails with
+        // NULL publishUp ($allowNullForPublishedUp = false in EmailRepository).
+        // __clone() resets publishUp to NULL, so we set it to now.
+        $clonedEmail->setPublishUp(new \DateTime());
 
         $this->emailModel->saveEntity($clonedEmail);
 
