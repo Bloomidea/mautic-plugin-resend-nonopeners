@@ -21,6 +21,22 @@ Every major email marketing platform (Mailchimp, Brevo, ActiveCampaign) has a on
 - **Safe by default** — each email can only be resent once; a resend cannot be resent again
 - **Uses the standard broadcast cron** — scales to any list size, respects rate limits
 
+## Screenshots
+
+**"Resend to Non-Openers" in the Options dropdown** (only appears for segment emails with sends)
+
+![Dropdown menu showing Resend to Non-Openers button](https://github.com/user-attachments/assets/dc774791-511b-4a02-b585-eee2705e9b5e)
+
+**Confirmation modal**
+
+![Confirmation modal with email name and notes](https://github.com/user-attachments/assets/4743dc05-6976-459e-bfa4-5a77cf35db34)
+
+**Auto-generated segment with membership + non-opener filters**
+
+![Segment filters showing segment membership and read email excluding](https://github.com/user-attachments/assets/0635beeb-d253-4c92-9e91-607e86c9d4b3)
+
+For the full visual walkthrough (8 screenshots), see [mautic/mautic#16004](https://github.com/mautic/mautic/issues/16004).
+
 ## How it works
 
 1. You click "Resend to Non-Openers" on a sent segment email
