@@ -30,6 +30,7 @@ class NonOpenersService
     {
         // Always check the translation parent
         if ($translationParent = $email->getTranslationParent()) {
+            \assert($translationParent instanceof Email);
             $email = $translationParent;
         }
 
@@ -69,6 +70,7 @@ class NonOpenersService
 
         // Always work from the translation parent (segments are assigned to the parent)
         if ($translationParent = $email->getTranslationParent()) {
+            \assert($translationParent instanceof Email);
             $email           = $translationParent;
             $originalEmailId = $email->getId();
         }
@@ -146,21 +148,30 @@ class NonOpenersService
         $clonedEmail->setLists([$newSegment]);
         $clonedEmail->setIsPublished(true);
         $clonedEmail->setCategory($emailCategory);
-        // publishUp must be set — the broadcast query excludes emails with
-        // NULL publishUp ($allowNullForPublishedUp = false in EmailRepository).
-        // __clone() resets publishUp to NULL, so we set it to now.
-        $clonedEmail->setPublishUp(new \DateTime());
+        // publishUp stays NULL until the resend segment has been built. The
+        // broadcast query skips emails with a NULL publishUp, and for an email
+        // that does not continue sending, Mautic only sends to contacts added
+        // to the segment before publishUp. Setting it now would exclude every
+        // member, since the segment is still empty. ResendSegmentSubscriber
+        // sets it after the segment's first full build.
+        $clonedEmail->setPublishUp(null);
+        // Contacts who join the original segment later have not opened it yet
+        // and would get the original and the resend minutes apart.
+        $clonedEmail->setContinueSending(false);
 
         $this->emailModel->saveEntity($clonedEmail);
 
         // Clone each translation child
         foreach ($email->getTranslationChildren() as $child) {
+            \assert($child instanceof Email);
             $clonedChild = clone $child;
             $clonedChild->setEmailType('list');
             $clonedChild->setName($child->getName().' (Resend - Non-Openers)');
             $clonedChild->setTranslationParent($clonedEmail);
             $clonedChild->setIsPublished(true);
             $clonedChild->setCategory($emailCategory);
+            $clonedChild->setPublishUp(null);
+            $clonedChild->setContinueSending(false);
 
             $this->emailModel->saveEntity($clonedChild);
         }
