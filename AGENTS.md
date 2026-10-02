@@ -168,6 +168,20 @@ Mautic entities use the `DEFERRED_EXPLICIT` change tracking policy: `flush()` wr
 - Triggering from a translation child resolves to the translation parent automatically
 - Permission check: `email:emails:editown` or `email:emails:editother`
 
+## Releasing
+
+Releases are cut from `main` with a `vX.Y.Z` tag. Packagist picks the tag up on its own.
+
+1. Update the pinned tag in the README's manual installation example (`git clone --branch vX.Y.Z`), and add upgrade steps to the README when existing installs need manual action.
+2. Push `main`, then create and push the tag.
+3. Create a GitHub release for every tag from v1.0.6 onwards (earlier tags have none and stay that way): `gh release create vX.Y.Z --verify-tag --title vX.Y.Z --latest --notes-file <notes>`.
+
+Release notes are written for the people who install the plugin, in the style of [mautic-plugin-ai-email-sections](https://github.com/Bloomidea/mautic-plugin-ai-email-sections/releases):
+
+- One opening sentence saying what the release is.
+- One bullet per change: a bold label, the issue link in parentheses, then what was wrong as a user saw it and what happens now. No class or method names.
+- A closing paragraph saying whether upgrading is recommended and what existing installs have to do by hand. Point to the README section that has the steps instead of repeating its SQL.
+
 ## Related Links
 
 - GitHub issue: https://github.com/mautic/mautic/issues/16004
