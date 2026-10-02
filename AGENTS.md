@@ -90,8 +90,12 @@ bin/console mautic:plugins:reload
 
 ```bash
 # From the Mautic root directory (tests run in the Mautic test environment)
-bin/phpunit plugins/MauticResendNonOpenersBundle/Tests/
+bin/phpunit -c app/phpunit.xml.dist plugins/MauticResendNonOpenersBundle/Tests/
 ```
+
+Without `-c app/phpunit.xml.dist` the tests fail on a missing `KERNEL_CLASS`. Under DDEV, a symlink to a checkout outside the Mautic project does not resolve inside the container; copy the plugin into `plugins/MauticResendNonOpenersBundle/` instead (e.g. `rsync -a --delete --exclude .git`).
+
+The functional tests cover the send scheduling (`ResendSchedulingFunctionalTest`) and the cleanup on delete (`ResendEmailDeleteFunctionalTest`).
 
 ## Essential Commands (Mautic context)
 
@@ -118,6 +122,8 @@ After a segment email has finished sending, this plugin lets the user resend it 
 
 - **`NonOpenersService`** — orchestrates the entire flow: segment cloning, email cloning, translation handling, persistence
 - **`EmailResend` entity** — stores the relationship between an original email and its resend (replaces what would have been a FK column on the core `emails` table)
+- **`ResendSegmentSubscriber`**: on `LIST_POST_SAVE` after the resend segment's first full build, sets `publishUp` on the resend email and its translations (see "Send scheduling" below)
+- **`EmailSubscriber`**: unpublishes the resend segment when the resend email is unpublished or deleted, and removes the `email_resends` row on delete
 - **`ButtonSubscriber`** — injects the "Resend to Non-Openers" button on the email detail page via `VIEW_INJECT_CUSTOM_BUTTONS`
 - **`ResendNonOpenersController`** — modal + execute actions for the UI
 - **`ResendApiController`** — REST API endpoint
@@ -132,6 +138,18 @@ The plugin does not write any custom SQL. It leverages existing Mautic segment f
 
 The cloned segment is rebuilt via `mautic:segments:update` to populate contacts, then the cloned email is published and picked up by Mautic's standard broadcast cron (`mautic:broadcasts:send`).
 
+### Send scheduling
+
+For a segment email that does not continue sending, Mautic uses `publishUp` as a send cut-off: only contacts added to the segment before it are pending (`EmailModel::getPendingLeads()`). The resend segment is created empty and filled by the next `mautic:segments:update`, so `publishUp` must not be set at creation time, or every member falls after the cut-off and nothing is sent. The resend is created with `publishUp` NULL (which also keeps the broadcast cron from picking it up) and `continueSending` false. `ResendSegmentSubscriber` sets `publishUp` to the segment's `lastBuiltDate` rounded up to the next full minute: the email form truncates `publishUp` to the minute, and a value with seconds would move back on the next edit.
+
+It acts only on the segment's first full build, so that resends created before 1.0.6 (also NULL `publishUp`, segment rebuilt for months) do not start sending on upgrade. `LeadList` does not track changes to `lastBuiltDate`, so the subscriber reads the database value from `UnitOfWork::getOriginalEntityData()` on `LIST_PRE_SAVE` and acts on `LIST_POST_SAVE`. The record lookup joins the resend email, so a row whose email was deleted is ignored.
+
+Mautic entities use the `DEFERRED_EXPLICIT` change tracking policy: `flush()` writes only entities passed to `persist()`. A test fixture that changes a loaded entity has to persist it again.
+
+### Deleting a resend email
+
+`EmailSubscriber` looks the `email_resends` row up on `EMAIL_PRE_DELETE` and acts on `EMAIL_POST_DELETE`. The lookup has to happen before the delete: where the table has its foreign keys, `ON DELETE CASCADE` removes the row together with the email. Some installs have the table without foreign keys, so the subscriber removes the row explicitly.
+
 ## Coding Standards
 
 - PHP 8.2+ with `declare(strict_types=1);`
@@ -145,7 +163,7 @@ The cloned segment is rebuilt via `mautic:segments:update` to populate contacts,
 
 - Only segment emails (`emailType === 'list'`) can be resent
 - The email must have finished sending (`getSendingStatus() === 'sent'`)
-- Each email can only be resent once (enforced by `email_resends` table + application check)
+- Each email can only be resent once (enforced by `email_resends` table + application check); deleting the resend email frees the original again
 - A resend email cannot be resent again
 - Triggering from a translation child resolves to the translation parent automatically
 - Permission check: `email:emails:editown` or `email:emails:editother`
